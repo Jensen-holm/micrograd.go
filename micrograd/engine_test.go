@@ -88,6 +88,8 @@ func TestNewValueprev(t *testing.T) {
 	}
 }
 
+// --- TESTING BACKPROP --- //
+
 func TestBuildTopo(t *testing.T) {
 	// ((4 * 5) + 4) * 5 = 120
 	a := NewValue(4)
@@ -106,16 +108,30 @@ func TestBuildTopo(t *testing.T) {
 	}
 }
 
-func TestBackward(t *testing.T) {
-	// y = ax^i + b
-	a := NewValue(2)
-	x := NewValue(5)
-	i := NewValue(2)
-	b := NewValue(10)
-
-	// 2*5**2 + 10
-	result := ((a.Mul(x)).Pow(i)).Add(b)
+func TestAddBackward(t *testing.T) {
+	a := NewValue(1)
+	b := NewValue(2)
+	result := a.Add(b)
 	result.Backward()
+	if a.grad != 1.0 {
+		t.Fatalf("TestBackward failed ::: gradient of a in 'a + b' expected to be 1.0, not %g", a.grad)
+	}
+	if b.grad != 1.0 {
+		t.Fatalf("TestBackward failed ::: gradient of b in 'a + b' expected to be 1.0, not %g", b.grad)
+	}
+}
 
-	// make sure that the gradients are what they should be
+func TestMulBackward(t *testing.T) {
+}
+
+func TestPowBackward(t *testing.T) {
+
+}
+
+func TestTanhBackward(t *testing.T) {
+
+}
+
+func TestReluBackward(t *testing.T) {
+
 }

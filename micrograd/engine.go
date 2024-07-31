@@ -1,7 +1,6 @@
 package microgradgo
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -125,6 +124,5 @@ func (v *Value) Backward() {
 	for idx := len(topo) - 1; idx >= 0; idx-- {
 		val := topo[idx]
 		val.backwardFunc()
-		fmt.Println(val)
 	}
 }
