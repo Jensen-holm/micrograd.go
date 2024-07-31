@@ -26,6 +26,9 @@ func TestAdd(t *testing.T) {
 	if result.op != ADD {
 		t.Fatalf("TestAdd failed ::: wrong op assigned to result")
 	}
+	if result.backwardFunc == nil {
+		t.Fatalf("TestAdd failed ::: backwards function was not set in result after operation")
+	}
 }
 
 func TestMul(t *testing.T) {
@@ -38,6 +41,9 @@ func TestMul(t *testing.T) {
 	}
 	if result.op != MUL {
 		t.Fatalf("TestMul failed ::: wrong op assigned to result")
+	}
+	if result.backwardFunc == nil {
+		t.Fatalf("TestMul failed ::: backwards function was not set in result after operation")
 	}
 }
 
@@ -52,6 +58,9 @@ func TestPow(t *testing.T) {
 	if result.op != POW {
 		t.Fatalf("TestPow failed ::: wrong op assigned to result")
 	}
+	if result.backwardFunc == nil {
+		t.Fatalf("TestPow failed ::: backwards function was not set in result after operation")
+	}
 }
 
 func TestReluNeg(t *testing.T) {
@@ -63,6 +72,9 @@ func TestReluNeg(t *testing.T) {
 	if result.op != RELU {
 		t.Fatalf("TestReluNeg failed ::: wrong op assigned to result")
 	}
+	if result.backwardFunc == nil {
+		t.Fatalf("TestReluNeg failed ::: backwards function was not set in result after operation")
+	}
 }
 
 func TestReluPos(t *testing.T) {
@@ -73,6 +85,9 @@ func TestReluPos(t *testing.T) {
 	}
 	if result.op != RELU {
 		t.Fatalf("TestReluPos failed ::: wrong op assigned to result")
+	}
+	if result.backwardFunc == nil {
+		t.Fatalf("TestReluPos failed ::: backwards function was not set in result after operation")
 	}
 }
 
@@ -114,24 +129,59 @@ func TestAddBackward(t *testing.T) {
 	result := a.Add(b)
 	result.Backward()
 	if a.grad != 1.0 {
-		t.Fatalf("TestBackward failed ::: gradient of a in 'a + b' expected to be 1.0, not %g", a.grad)
+		t.Fatalf("TestAddBackward failed ::: gradient of a in 'a + b' expected to be 1.0, not %g", a.grad)
 	}
 	if b.grad != 1.0 {
-		t.Fatalf("TestBackward failed ::: gradient of b in 'a + b' expected to be 1.0, not %g", b.grad)
+		t.Fatalf("TestAddBackward failed ::: gradient of b in 'a + b' expected to be 1.0, not %g", b.grad)
 	}
 }
-
 func TestMulBackward(t *testing.T) {
+	a := NewValue(4)
+	b := NewValue(5)
+	result := a.Mul(b)
+	result.Backward()
+	if a.grad != b.data {
+		t.Fatalf("TestMulBackward failed ::: gradient of a in 'a * b' expected to be 5, not %g", a.grad)
+	}
+	if b.grad != a.data {
+		t.Fatalf("TestMulBackward failed ::: gradient of b in 'a * b' expected to be 4, not %g", b.grad)
+	}
 }
 
 func TestPowBackward(t *testing.T) {
-
+	a := NewValue(2)
+	exponent := NewValue(3.0)
+	result := a.Pow(exponent)
+	result.Backward()
+	expectedGrad := 3 * math.Pow(2, 2) // 3 * a^(3-1)
+	if a.grad != expectedGrad {
+		t.Fatalf("TestPowBackward failed ::: gradient of a in 'a ^ 3' expected to be %g, not %g", expectedGrad, a.grad)
+	}
 }
 
 func TestTanhBackward(t *testing.T) {
-
+	a := NewValue(0.5)
+	result := a.Tanh()
+	result.Backward()
+	expectedGrad := 1 - math.Pow(math.Tanh(0.5), 2) // 1 - tanh(a)^2
+	if a.grad != expectedGrad {
+		t.Fatalf("TestTanhBackward failed ::: gradient of a in 'tanh(a)' expected to be %g, not %g", expectedGrad, a.grad)
+	}
 }
 
 func TestReluBackward(t *testing.T) {
-
+	a := NewValue(-1)
+	result := a.Relu()
+	result.Backward()
+	expectedGrad := 0.0 // gradient is 0 when a <= 0
+	if a.grad != expectedGrad {
+		t.Fatalf("TestReluBackward failed ::: gradient of a in 'relu(a)' expected to be %g, not %g", expectedGrad, a.grad)
+	}
+	b := NewValue(1)
+	result = b.Relu()
+	result.Backward()
+	expectedGrad = 1.0 // gradient is 1 when a > 0
+	if b.grad != expectedGrad {
+		t.Fatalf("TestReluBackward failed ::: gradient of b in 'relu(b)' expected to be %g, not %g", expectedGrad, b.grad)
+	}
 }

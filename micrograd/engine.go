@@ -47,6 +47,11 @@ func opResult(data float64, prev map[*Value]bool, op string) *Value {
 // newprev: used within operators so that I don't have to
 // write a map literal for every single operation
 func newprev(v, other *Value) map[*Value]bool {
+	if other == nil {
+		return map[*Value]bool{
+			v: true,
+		}
+	}
 	return map[*Value]bool{
 		v:     true,
 		other: true,
@@ -68,7 +73,7 @@ func (v *Value) Mul(other *Value) *Value {
 	result := opResult(v.data*other.data, newprev(v, other), MUL)
 	result.backwardFunc = func() {
 		v.grad += other.data * result.grad
-		other.grad += v.grad * result.grad
+		other.grad += v.data * result.grad
 	}
 	return result
 }
@@ -82,7 +87,7 @@ func (v *Value) Pow(other *Value) *Value {
 }
 
 func (v *Value) Tanh() *Value {
-	t := (math.Exp(2*v.data) - 1) / (math.Exp(2 * v.data))
+	t := (math.Exp(2*v.data) - 1) / (math.Exp(2*v.data) + 1)
 	result := opResult(t, newprev(v, nil), TANH)
 	result.backwardFunc = func() {
 		v.grad += (1 - t*t) * result.grad
@@ -123,6 +128,10 @@ func (v *Value) Backward() {
 	v.grad = 1
 	for idx := len(topo) - 1; idx >= 0; idx-- {
 		val := topo[idx]
+		if len(val.prev) < 1 {
+			// should be the root node
+			break
+		}
 		val.backwardFunc()
 	}
 }
