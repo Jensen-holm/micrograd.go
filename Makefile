@@ -1,4 +1,3 @@
-TESTDIR = tests
 
 test:
-	go test ./$(TESTDIR)
+	go test ./...
