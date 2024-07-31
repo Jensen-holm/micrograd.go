@@ -12,33 +12,33 @@ const (
 )
 
 type Value struct {
-	Data     float64
-	Children map[*Value]bool
-	op       int
-	grad     float64
-	backward func(v, other *Value)
+	Data         float64
+	Children     map[*Value]bool
+	Op           int
+	Grad         float64
+	BackwardFunc func()
 }
 
 // NewValue: for constructing Values only that are not
 // a part of any computational graph yet
 func NewValue(data float64) *Value {
 	return &Value{
-		Data:     data,
-		Children: nil,
-		op:       NIL,
-		backward: nil,
-		grad:     0,
+		Data:         data,
+		Children:     nil,
+		Op:           NIL,
+		BackwardFunc: nil,
+		Grad:         0,
 	}
 }
 
 // opResult: for constructing values from within an operation
 func opResult(data float64, children map[*Value]bool, op int) *Value {
 	return &Value{
-		Data:     data,
-		Children: children,
-		op:       op,
-		backward: nil,
-		grad:     0,
+		Data:         data,
+		Children:     children,
+		Op:           op,
+		BackwardFunc: nil,
+		Grad:         0,
 	}
 }
 
@@ -55,49 +55,47 @@ func newChildren(v, other *Value) map[*Value]bool {
 
 func (v *Value) Add(other *Value) *Value {
 	result := opResult(v.Data+other.Data, newChildren(v, other), ADD)
-	v.backward = func(v, other *Value) {
-		v.grad += result.grad
-		other.grad += result.grad
+	result.BackwardFunc = func() {
+		v.Grad += result.Grad
+		other.Grad += result.Grad
 	}
 	return result
 }
 
 func (v *Value) Mul(other *Value) *Value {
 	result := opResult(v.Data*other.Data, newChildren(v, other), MUL)
-	v.backward = func(v, other *Value) {
-		v.grad += other.Data * result.grad
-		other.grad += v.grad * result.grad
+	result.BackwardFunc = func() {
+		v.Grad += other.Data * result.Grad
+		other.Grad += v.Grad * result.Grad
 	}
 	return result
 }
 
 func (v *Value) Pow(other *Value) *Value {
 	result := opResult(math.Pow(v.Data, other.Data), newChildren(v, other), POW)
-	v.backward = func(v, other *Value) {
-		v.grad += (other.Data * math.Pow(v.Data, other.Data-1)) * result.grad
+	result.BackwardFunc = func() {
+		v.Grad += (other.Data * math.Pow(v.Data, other.Data-1)) * result.Grad
 	}
 	return result
 }
 
 func (v *Value) Tanh() *Value {
 	t := (math.Exp(2*v.Data) - 1) / (math.Exp(2 * v.Data))
-	return opResult(t, newChildren(v, nil), TANH)
+	result := opResult(t, newChildren(v, nil), TANH)
+	result.BackwardFunc = func() {
+		v.Grad += (1 - t*t) * result.Grad
+	}
+	return result
 }
 
 func (v *Value) Relu() *Value {
-	result := opResult(v.Data, newChildren(v, nil), RELU)
-	v.backward = func(v, other *Value) {
-		if v.Data > 0 {
-			v.grad += result.grad
-		} else {
-			v.grad += 0
+	result := opResult(max(v.Data, 0), newChildren(v, nil), RELU)
+	result.BackwardFunc = func() {
+		if result.Data > 0 {
+			v.Grad += result.Grad
 		}
 	}
 	return result
 }
 
 // --- MAIN BAKCPROP METHOD --- //
-
-func (v *Value) Backward() {
-
-}

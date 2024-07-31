@@ -43,6 +43,22 @@ func TestPow(t *testing.T) {
 	}
 }
 
+func TestReluNeg(t *testing.T) {
+	val1 := microgradgo.NewValue(-1)
+	result := val1.Relu()
+	if result.Data != 0 {
+		t.Fatalf("TestReluNeg failed ::: relu(%g) != 0", val1.Data)
+	}
+}
+
+func TestReluPos(t *testing.T) {
+	val1 := microgradgo.NewValue(1)
+	result := val1.Relu()
+	if result.Data != val1.Data {
+		t.Fatalf("TestReluPos failed ::: relu(%g) != %g", val1.Data, val1.Data)
+	}
+}
+
 func TestNewValueChildren(t *testing.T) {
 	val1 := microgradgo.NewValue(10)
 	val2 := microgradgo.NewValue(8.0)
