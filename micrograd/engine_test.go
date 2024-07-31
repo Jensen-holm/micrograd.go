@@ -76,19 +76,20 @@ func TestReluPos(t *testing.T) {
 	}
 }
 
-func TestNewValuechildren(t *testing.T) {
+func TestNewValueprev(t *testing.T) {
 	val1 := NewValue(10)
 	val2 := NewValue(8.0)
 	result := val1.Add(val2)
 
-	_, val1Ok := result.children[val1]
-	_, val2Ok := result.children[val2]
+	_, val1Ok := result.prev[val1]
+	_, val2Ok := result.prev[val2]
 	if !val2Ok || !val1Ok {
-		t.Fatalf("TestNewValuechildren failed ::: children were not added properly")
+		t.Fatalf("TestNewValueprev failed ::: prev were not added properly")
 	}
 }
 
 func TestBuildTopo(t *testing.T) {
+	// ((4 * 5) + 4) * 5 = 120
 	a := NewValue(4)
 	b := NewValue(5)
 	result := a.Mul(b).Add(a).Mul(b)
@@ -98,8 +99,23 @@ func TestBuildTopo(t *testing.T) {
 
 	visited := map[*Value]bool{}
 	topo := []*Value{}
-	topo = result.buildTopoOrder(visited, topo)
-	if len(topo) != 4 {
-		t.Fatalf("TestBuildTopo failed ::: length of topo is '%d' when it should be 4 ::: topo = %#v", len(topo), topo)
+	topo = buildTopoOrder(result, visited, topo)
+	if len(topo) != 5 {
+		/// the length of topo should be the number of operations performed + 1
+		t.Fatalf("TestBuildTopo failed ::: length of topo is '%d' when it should be 5 ::: topo = %#v", len(topo), topo)
 	}
+}
+
+func TestBackward(t *testing.T) {
+	// y = ax^i + b
+	a := NewValue(2)
+	x := NewValue(5)
+	i := NewValue(2)
+	b := NewValue(10)
+
+	// 2*5**2 + 10
+	result := ((a.Mul(x)).Pow(i)).Add(b)
+	result.Backward()
+
+	// make sure that the gradients are what they should be
 }
